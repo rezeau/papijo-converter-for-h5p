@@ -3,7 +3,10 @@
  * Plugin Name: Papijo H5P Converter
  * Description: Extracts supported default H5P packages from WordPress and converts them to Papi Jo equivalents. Use it from Tools > Papijo H5P Converter.
  * Version: 2.2.1
- * Author: Papi Jo and Codex
+ * Requires at least: 5.8
+ * Requires PHP: 8.0
+ * Author: Joseph Rézeau (Papi Jo)
+ * Author URI: https://www.rezeau.org/wp-h5p/
  * License: GPL-2.0-or-later
  * Text Domain: papijo-h5p-converter
  */
