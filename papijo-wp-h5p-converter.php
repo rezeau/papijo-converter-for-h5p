@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: Papi Jo H5P Converter
- * Description: Extracts supported default H5P packages from WordPress and converts them to Papi Jo equivalents. Use it from Tools > Papi Jo H5P Converter.
+ * Plugin Name: Papijo H5P Converter
+ * Description: Extracts supported default H5P packages from WordPress and converts them to Papi Jo equivalents. Use it from Tools > Papijo H5P Converter.
  * Version: 2.2.1
  * Author: Papi Jo and Codex
  * License: GPL-2.0-or-later
- * Text Domain: papi-jo-h5p-converter
+ * Text Domain: papijo-wp-h5p-converter
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Papi_Jo_H5P_Converter {
 	private const VERSION      = '2.2.1';
-	private const MENU_SLUG    = 'papi-jo-h5p-converter';
+	private const MENU_SLUG    = 'papijo-wp-h5p-converter';
 	private const ACTION       = 'papi_jo_h5p_converter_convert';
 	private const NONCE_ACTION = 'papi_jo_h5p_converter_convert';
 	private const DOWNLOAD_COOKIE = 'papi_jo_h5p_converter_download_ready';
@@ -84,8 +84,8 @@ final class Papi_Jo_H5P_Converter {
 
 	public function register_admin_page(): void {
 		$this->page_hook = add_management_page(
-			esc_html__( 'Papi Jo H5P Converter', 'papi-jo-h5p-converter' ),
-			esc_html__( 'Papi Jo H5P Converter', 'papi-jo-h5p-converter' ),
+			esc_html__( 'Papijo H5P Converter', 'papijo-wp-h5p-converter' ),
+			esc_html__( 'Papijo H5P Converter', 'papijo-wp-h5p-converter' ),
 			'manage_options',
 			self::MENU_SLUG,
 			array( $this, 'render_admin_page' )
@@ -97,17 +97,17 @@ final class Papi_Jo_H5P_Converter {
 			return;
 		}
 
-		wp_register_style( 'papi-jo-h5p-converter-admin', false, array(), self::VERSION );
-		wp_enqueue_style( 'papi-jo-h5p-converter-admin' );
+		wp_register_style( 'papijo-wp-h5p-converter-admin', false, array(), self::VERSION );
+		wp_enqueue_style( 'papijo-wp-h5p-converter-admin' );
 		wp_add_inline_style(
-			'papi-jo-h5p-converter-admin',
+			'papijo-wp-h5p-converter-admin',
 			'.h5p-exporter-status{max-width:900px}.h5p-exporter-actions{display:flex;gap:8px;align-items:center;margin:16px 0}.h5p-exporter-progress{display:none;max-width:900px;margin:10px 0}.h5p-exporter-progress progress{width:100%;height:16px}.h5p-exporter-table td,.h5p-exporter-table th{vertical-align:middle}.h5p-exporter-muted{color:#646970}.h5p-exporter-badge{display:inline-block;padding:2px 7px;border:1px solid #c3c4c7;border-radius:999px;background:#fff;font-size:12px}.h5p-exporter-empty{padding:24px;background:#fff;border:1px solid #c3c4c7;max-width:900px}.h5p-exporter-path{font-family:Consolas,Monaco,monospace}.h5p-exporter-warning{max-width:900px}'
 		);
 
-		wp_register_script( 'papi-jo-h5p-converter-admin', false, array(), self::VERSION, true );
-		wp_enqueue_script( 'papi-jo-h5p-converter-admin' );
+		wp_register_script( 'papijo-wp-h5p-converter-admin', false, array(), self::VERSION, true );
+		wp_enqueue_script( 'papijo-wp-h5p-converter-admin' );
 		wp_add_inline_script(
-			'papi-jo-h5p-converter-admin',
+			'papijo-wp-h5p-converter-admin',
 			<<<'JS'
 (function(){
 	var all = document.getElementById('h5p-exporter-select-all');
@@ -192,19 +192,19 @@ JS
 
 	public function render_admin_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to convert H5P content.', 'papi-jo-h5p-converter' ) );
+			wp_die( esc_html__( 'You do not have permission to convert H5P content.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		$exports_dir = $this->get_exports_directory();
 		$files       = $this->get_export_files();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Papi Jo H5P Converter', 'papi-jo-h5p-converter' ); ?></h1>
+			<h1><?php esc_html_e( 'Papijo H5P Converter', 'papijo-wp-h5p-converter' ); ?></h1>
 			<p class="description h5p-exporter-status">
-				<?php esc_html_e( 'Extract supported default H5P packages from this WordPress site and download converted Papi Jo packages. Original H5P files are not changed.', 'papi-jo-h5p-converter' ); ?>
+				<?php esc_html_e( 'Extract supported default H5P packages from this WordPress site and download converted Papi Jo packages. Original H5P files are not changed.', 'papijo-wp-h5p-converter' ); ?>
 			</p>
 			<p class="h5p-exporter-muted">
-				<?php esc_html_e( 'Scanning:', 'papi-jo-h5p-converter' ); ?>
+				<?php esc_html_e( 'Scanning:', 'papijo-wp-h5p-converter' ); ?>
 				<span class="h5p-exporter-path"><?php echo esc_html( $exports_dir ); ?></span>
 			</p>
 
@@ -214,7 +214,7 @@ JS
 						<?php
 						printf(
 							/* translators: %s: exports directory path. */
-							esc_html__( 'The H5P exports folder does not exist yet: %s', 'papi-jo-h5p-converter' ),
+							esc_html__( 'The H5P exports folder does not exist yet: %s', 'papijo-wp-h5p-converter' ),
 							esc_html( $exports_dir )
 						);
 						?>
@@ -226,7 +226,7 @@ JS
 						<?php
 						printf(
 							/* translators: %s: exports directory path. */
-							esc_html__( 'The H5P exports folder is not readable: %s', 'papi-jo-h5p-converter' ),
+							esc_html__( 'The H5P exports folder is not readable: %s', 'papijo-wp-h5p-converter' ),
 							esc_html( $exports_dir )
 						);
 						?>
@@ -234,14 +234,14 @@ JS
 				</div>
 			<?php elseif ( ! class_exists( 'ZipArchive' ) ) : ?>
 				<div class="notice notice-error h5p-exporter-warning">
-					<p><?php esc_html_e( 'The PHP Zip extension is required to inspect and convert .h5p packages.', 'papi-jo-h5p-converter' ); ?></p>
+					<p><?php esc_html_e( 'The PHP Zip extension is required to inspect and convert .h5p packages.', 'papijo-wp-h5p-converter' ); ?></p>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( empty( $files ) ) : ?>
 				<div class="h5p-exporter-empty">
-					<p><?php esc_html_e( 'No supported default .h5p export packages were found in the H5P exports folder.', 'papi-jo-h5p-converter' ); ?></p>
-					<p class="h5p-exporter-muted"><?php esc_html_e( 'Supported source types: Complex fill the blanks, Dialog Cards, Drag and Drop, Drag the Words, Mark the Words, Multimedia Choice, and Question Set.', 'papi-jo-h5p-converter' ); ?></p>
+					<p><?php esc_html_e( 'No supported default .h5p export packages were found in the H5P exports folder.', 'papijo-wp-h5p-converter' ); ?></p>
+					<p class="h5p-exporter-muted"><?php esc_html_e( 'Supported source types: Complex fill the blanks, Dialog Cards, Drag and Drop, Drag the Words, Mark the Words, Multimedia Choice, and Question Set.', 'papijo-wp-h5p-converter' ); ?></p>
 				</div>
 			<?php else : ?>
 				<form class="h5p-exporter-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -250,16 +250,16 @@ JS
 
 					<div class="h5p-exporter-actions">
 						<button type="submit" class="button button-primary" name="convert_selected" value="1">
-							<?php esc_html_e( 'Convert Selected to ZIP', 'papi-jo-h5p-converter' ); ?>
+							<?php esc_html_e( 'Convert Selected to ZIP', 'papijo-wp-h5p-converter' ); ?>
 						</button>
 						<button type="submit" class="button" name="convert_all" value="1">
-							<?php esc_html_e( 'Convert All to ZIP', 'papi-jo-h5p-converter' ); ?>
+							<?php esc_html_e( 'Convert All to ZIP', 'papijo-wp-h5p-converter' ); ?>
 						</button>
 						<span class="h5p-exporter-muted">
 							<?php
 							printf(
 								/* translators: %d: number of supported H5P export packages. */
-								esc_html( _n( '%d source package available', '%d source packages available', count( $files ), 'papi-jo-h5p-converter' ) ),
+								esc_html( _n( '%d source package available', '%d source packages available', count( $files ), 'papijo-wp-h5p-converter' ) ),
 								count( $files )
 							);
 							?>
@@ -267,20 +267,20 @@ JS
 					</div>
 					<div id="h5p-exporter-progress" class="h5p-exporter-progress" aria-live="polite">
 						<progress></progress>
-						<p class="description"><?php esc_html_e( 'Converting selected H5P packages. Keep this tab open until the ZIP download starts.', 'papi-jo-h5p-converter' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Converting selected H5P packages. Keep this tab open until the ZIP download starts.', 'papijo-wp-h5p-converter' ); ?></p>
 					</div>
 
 					<table class="widefat striped h5p-exporter-table">
 						<thead>
 							<tr>
 								<td class="manage-column check-column">
-									<input id="h5p-exporter-select-all" type="checkbox" aria-label="<?php esc_attr_e( 'Select all H5P packages', 'papi-jo-h5p-converter' ); ?>">
+									<input id="h5p-exporter-select-all" type="checkbox" aria-label="<?php esc_attr_e( 'Select all H5P packages', 'papijo-wp-h5p-converter' ); ?>">
 								</td>
-								<th scope="col"><?php esc_html_e( 'Source Package', 'papi-jo-h5p-converter' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Source H5P Type', 'papi-jo-h5p-converter' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Converted Output', 'papi-jo-h5p-converter' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Size', 'papi-jo-h5p-converter' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Modified', 'papi-jo-h5p-converter' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Source Package', 'papijo-wp-h5p-converter' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Source H5P Type', 'papijo-wp-h5p-converter' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Converted Output', 'papijo-wp-h5p-converter' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Size', 'papijo-wp-h5p-converter' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Modified', 'papijo-wp-h5p-converter' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -289,7 +289,7 @@ JS
 									<th scope="row" class="check-column">
 										<input class="h5p-exporter-file-check" type="checkbox" name="file_tokens[]" value="<?php echo esc_attr( $file['token'] ); ?>" aria-label="<?php echo esc_attr( sprintf(
 											/* translators: %s: H5P package filename. */
-											esc_attr__( 'Select %s', 'papi-jo-h5p-converter' ),
+											esc_attr__( 'Select %s', 'papijo-wp-h5p-converter' ),
 											$file['name']
 										) ); ?>">
 									</th>
@@ -310,18 +310,18 @@ JS
 
 	public function handle_conversion_download(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to convert H5P content.', 'papi-jo-h5p-converter' ) );
+			wp_die( esc_html__( 'You do not have permission to convert H5P content.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		check_admin_referer( self::NONCE_ACTION );
 
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			wp_die( esc_html__( 'The PHP Zip extension is required to convert .h5p packages.', 'papi-jo-h5p-converter' ) );
+			wp_die( esc_html__( 'The PHP Zip extension is required to convert .h5p packages.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		$available_files = $this->get_export_files();
 		if ( empty( $available_files ) ) {
-			wp_die( esc_html__( 'No supported default .h5p export packages were found.', 'papi-jo-h5p-converter' ) );
+			wp_die( esc_html__( 'No supported default .h5p export packages were found.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		if ( isset( $_POST['convert_all'] ) ) {
@@ -335,7 +335,7 @@ JS
 		}
 
 		if ( empty( $selected_files ) ) {
-			wp_die( esc_html__( 'Choose at least one source H5P package to convert.', 'papi-jo-h5p-converter' ) );
+			wp_die( esc_html__( 'Choose at least one source H5P package to convert.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		$download_token = isset( $_POST['h5p_download_token'] ) ? sanitize_text_field( wp_unslash( $_POST['h5p_download_token'] ) ) : '';
@@ -365,7 +365,7 @@ JS
 
 			$archive = new ZipArchive();
 			if ( true !== $archive->open( $archive_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
-				throw new RuntimeException( esc_html__( 'Could not create the converted download ZIP file.', 'papi-jo-h5p-converter' ) );
+				throw new RuntimeException( esc_html__( 'Could not create the converted download ZIP file.', 'papijo-wp-h5p-converter' ) );
 			}
 
 			foreach ( $outputs as $output ) {
@@ -487,7 +487,7 @@ JS
 	private function convert_file( array $file, array &$warnings ): string {
 		$source_zip = new ZipArchive();
 		if ( true !== $source_zip->open( $file['path'] ) ) {
-			$warnings[] = $file['name'] . ': ' . esc_html__( 'could not read the H5P archive.', 'papi-jo-h5p-converter' );
+			$warnings[] = $file['name'] . ': ' . esc_html__( 'could not read the H5P archive.', 'papijo-wp-h5p-converter' );
 			return '';
 		}
 
@@ -495,7 +495,7 @@ JS
 		$manifest      = false !== $manifest_json ? json_decode( $manifest_json, true ) : null;
 		if ( ! is_array( $manifest ) || empty( $manifest['mainLibrary'] ) || empty( self::LIBRARIES[ $manifest['mainLibrary'] ] ) ) {
 			$source_zip->close();
-			$warnings[] = $file['name'] . ': ' . esc_html__( 'not a supported source H5P package.', 'papi-jo-h5p-converter' );
+			$warnings[] = $file['name'] . ': ' . esc_html__( 'not a supported source H5P package.', 'papijo-wp-h5p-converter' );
 			return '';
 		}
 
@@ -504,13 +504,13 @@ JS
 
 		if ( $this->is_papi_jo_library( $source_machine, $this->get_main_library_metadata( $source_zip, $source_machine ) ) ) {
 			$source_zip->close();
-			$warnings[] = $file['name'] . ': ' . esc_html__( 'already appears to be a Papi Jo package.', 'papi-jo-h5p-converter' );
+			$warnings[] = $file['name'] . ': ' . esc_html__( 'already appears to be a Papi Jo package.', 'papijo-wp-h5p-converter' );
 			return '';
 		}
 
 		if ( ! $this->replace_dependency( $manifest, $source_machine, $library ) ) {
 			$source_zip->close();
-			$warnings[] = $file['name'] . ': ' . esc_html__( 'could not find the source library dependency in h5p.json.', 'papi-jo-h5p-converter' );
+			$warnings[] = $file['name'] . ': ' . esc_html__( 'could not find the source library dependency in h5p.json.', 'papijo-wp-h5p-converter' );
 			return '';
 		}
 
@@ -530,7 +530,7 @@ JS
 		if ( true !== $output_zip->open( $output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
 			$source_zip->close();
 			wp_delete_file( $output_path );
-			throw new RuntimeException( esc_html__( 'Could not create a converted .h5p package.', 'papi-jo-h5p-converter' ) );
+			throw new RuntimeException( esc_html__( 'Could not create a converted .h5p package.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		$library_dirs = $this->get_archive_library_dirs( $source_zip );
@@ -724,12 +724,12 @@ JS
 
 	private function format_modified_time( int $timestamp ): string {
 		if ( $timestamp <= 0 ) {
-			return esc_html__( 'Unknown', 'papi-jo-h5p-converter' );
+			return esc_html__( 'Unknown', 'papijo-wp-h5p-converter' );
 		}
 
 		return sprintf(
 			/* translators: 1: date, 2: time. */
-			esc_html__( '%1$s at %2$s', 'papi-jo-h5p-converter' ),
+			esc_html__( '%1$s at %2$s', 'papijo-wp-h5p-converter' ),
 			wp_date( get_option( 'date_format' ), $timestamp ),
 			wp_date( get_option( 'time_format' ), $timestamp )
 		);
@@ -744,12 +744,12 @@ JS
 	private function create_temp_file( string $prefix, string $extension ): string {
 		$temp_dir = get_temp_dir();
 		if ( ! is_dir( $temp_dir ) || ! wp_is_writable( $temp_dir ) ) {
-			throw new RuntimeException( esc_html__( 'Could not create a temporary conversion file.', 'papi-jo-h5p-converter' ) );
+			throw new RuntimeException( esc_html__( 'Could not create a temporary conversion file.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		$filename = wp_unique_filename( $temp_dir, uniqid( $prefix, true ) . $extension );
 		if ( ! is_string( $filename ) || '' === $filename ) {
-			throw new RuntimeException( esc_html__( 'Could not prepare a temporary conversion file.', 'papi-jo-h5p-converter' ) );
+			throw new RuntimeException( esc_html__( 'Could not prepare a temporary conversion file.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		return trailingslashit( $temp_dir ) . $filename;
@@ -757,7 +757,7 @@ JS
 
 	private function stream_file( string $path, string $filename, string $content_type, array $temp_files, string $download_token = '' ): void {
 		if ( ! is_readable( $path ) ) {
-			throw new RuntimeException( esc_html__( 'The converted file could not be read.', 'papi-jo-h5p-converter' ) );
+			throw new RuntimeException( esc_html__( 'The converted file could not be read.', 'papijo-wp-h5p-converter' ) );
 		}
 
 		if ( ! empty( $temp_files ) ) {

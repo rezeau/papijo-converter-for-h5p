@@ -1,4 +1,4 @@
-=== Papi Jo H5P Converter ===
+=== Papijo H5P Converter ===
 Contributors: papi-jo, codex
 Tags: h5p, export, conversion, admin, content
 Requires at least: 5.8
@@ -8,11 +8,11 @@ Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Extract supported default H5P packages from WordPress and download converted Papi Jo packages. Use it from Tools > Papi Jo H5P Converter.
+Extract supported default H5P packages from WordPress and download converted Papi Jo packages. Use it from Tools > Papijo H5P Converter.
 
 == Description ==
 
-Papi Jo H5P Converter adds a Tools > Papi Jo H5P Converter screen in WordPress admin. It scans the standard WordPress H5P exports folder, lists only supported default/source H5P packages, and converts selected packages into their matching Papi Jo equivalents.
+Papijo H5P Converter adds a Tools > Papijo H5P Converter screen in WordPress admin. It scans the standard WordPress H5P exports folder, lists only supported default/source H5P packages, and converts selected packages into their matching Papi Jo equivalents.
 
 The original source .h5p files are never changed.
 
@@ -42,9 +42,9 @@ Converted outputs:
 
 == Installation ==
 
-1. Upload the papi-jo-h5p-converter folder to wp-content/plugins.
-2. Activate Papi Jo H5P Converter in WordPress admin.
-3. Go to Tools > Papi Jo H5P Converter.
+1. Upload the papijo-wp-h5p-converter folder to wp-content/plugins.
+2. Activate Papijo H5P Converter in WordPress admin.
+3. Go to Tools > Papijo H5P Converter.
 
 == Requirements ==
 
