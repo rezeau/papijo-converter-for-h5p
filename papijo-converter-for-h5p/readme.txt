@@ -1,20 +1,22 @@
-=== Papijo H5P Converter ===
-Contributors: papi-jo, codex
+=== Papijo Package Converter for H5P ===
+Contributors: papijo
 Tags: h5p, export, conversion, admin, content
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.2.1
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Extract supported default H5P packages from WordPress and download converted Papi Jo packages. Use it from Tools > Papijo H5P Converter.
+Convert supported H5P packages into their matching Papi Jo content types. Use it from Tools > Papijo Package Converter for H5P.
 
 == Description ==
 
-Papijo H5P Converter adds a Tools > Papijo H5P Converter screen in WordPress admin. It scans the standard WordPress H5P exports folder, lists only supported default/source H5P packages, and converts selected packages into their matching Papi Jo equivalents.
+Papijo Package Converter for H5P adds a Tools > Papijo Package Converter for H5P screen in WordPress admin. It scans the standard H5P exports folder, lists only supported default/source packages, and converts selected packages into their matching Papi Jo equivalents.
 
 The original source .h5p files are never changed.
+
+This independent plugin is not affiliated with or endorsed by the H5P project.
 
 Source folder:
 
@@ -29,6 +31,7 @@ Supported source H5P content types:
 * Mark the Words
 * Multimedia Choice
 * Question Set
+* Timeline
 
 Converted outputs:
 
@@ -39,12 +42,13 @@ Converted outputs:
 * MarkTheWords Papi Jo
 * MultiMediaChoice Papi Jo
 * QuestionSet Papi Jo
+* NDLA Timeline Papi Jo
 
 == Installation ==
 
-1. Upload the papijo-h5p-converter folder to wp-content/plugins.
-2. Activate Papijo H5P Converter in WordPress admin.
-3. Go to Tools > Papijo H5P Converter.
+1. Upload the papijo-converter-for-h5p folder to wp-content/plugins.
+2. Activate Papijo Package Converter for H5P in WordPress admin.
+3. Go to Tools > Papijo Package Converter for H5P.
 
 == Requirements ==
 
@@ -57,6 +61,10 @@ Converted outputs:
 Converted packages are always downloaded as one ZIP archive. Temporary conversion files are cleaned up after each request.
 
 == Changelog ==
+
+= 2.3.0 =
+Add conversion support for Timeline packages to NDLA Timeline Papi Jo 0.2.
+Rename the plugin to Papijo Package Converter for H5P for clearer trademark attribution.
 
 = 2.2.1 =
 Hide the conversion progress indicator when the generated ZIP download is ready.
