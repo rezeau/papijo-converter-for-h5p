@@ -2,6 +2,8 @@
 
 WordPress admin tool for converting supported default H5P export packages into their matching Papi Jo H5P equivalents.
 
+**Official download and updates:** [WordPress.org Plugin Directory](https://wordpress.org/plugins/papijo-converter-for-h5p/)
+
 The plugin adds a Tools > Papijo Package Converter for H5P screen. It scans the standard WordPress H5P exports folder, lists supported source packages, and downloads converted packages as a ZIP archive. Original `.h5p` files are not changed.
 
 This independent plugin is not affiliated with or endorsed by the H5P project.
@@ -35,7 +37,6 @@ This independent plugin is not affiliated with or endorsed by the H5P project.
 ## Repository Layout
 
 - `papijo-converter-for-h5p/` - WordPress plugin source folder.
-- `papijo-converter-for-h5p.zip` - installable plugin package.
 - `assets/` - WordPress.org plugin icons.
 
 ## Notes
