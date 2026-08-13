@@ -2,7 +2,7 @@
 Contributors: papijo
 Tags: h5p, export, conversion, admin, content
 Requires at least: 5.8
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
 Stable tag: 2.3.0
 License: GPLv2 or later
