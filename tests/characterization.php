@@ -19,11 +19,10 @@ $suite->test(
 				'H5P.AdvancedBlanks'   => array( 'H5P.AdvancedBlanksPapiJo', 1, 4 ),
 				'H5P.Dialogcards'      => array( 'H5P.DialogcardsPapiJo', 1, 17 ),
 				'H5P.DragQuestion'     => array( 'H5P.DragQuestionPapiJo', 1, 14 ),
-				'H5P.DragText'         => array( 'H5P.DragTextPapiJo', 1, 1 ),
-				'H5P.MarkTheWords'     => array( 'H5P.MarkTheWordsPapiJo', 1, 1 ),
+				'H5P.DragText'         => array( 'H5P.DragTextPapiJo', 1, 3 ),
+				'H5P.MarkTheWords'     => array( 'H5P.MarkTheWordsPapiJo', 1, 2 ),
 				'H5P.MultiMediaChoice' => array( 'H5P.MultiMediaChoicePapiJo', 0, 4 ),
-				'H5P.QuestionSet'      => array( 'H5P.QuestionSetPapiJo', 1, 21 ),
-				'H5P.Timeline'         => array( 'H5P.NDLATimelinePapiJo', 0, 2 ),
+				'H5P.QuestionSet'      => array( 'H5P.QuestionSetPapiJo', 1, 23 ),
 			),
 			$actual
 		);
@@ -41,7 +40,7 @@ $suite->test(
 
 		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['mainLibrary'] );
 		$suite->assertSame( 1, $result['manifest']['preloadedDependencies'][0]['majorVersion'] );
-		$suite->assertSame( 1, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
+		$suite->assertSame( 3, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
 		$suite->assertSame( $content, $result['content'] );
 		$suite->assertTrue( ! $result['has_library_files'], 'Bundled library directories should be removed from converted packages.' );
 		$suite->assertSame( $result['source_hash_before'], $result['source_hash_after'], 'The source package must remain untouched.' );
@@ -62,6 +61,7 @@ $suite->test(
 		$result = convert_characterization_package( $suite, $converter, 'H5P.MarkTheWords', 1, 11, $content );
 
 		$suite->assertSame( 'H5P.MarkTheWordsPapiJo', $result['manifest']['mainLibrary'] );
+		$suite->assertSame( 2, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
 		$suite->assertSame( $content, $result['content'] );
 		$suite->assertTrue( ! array_key_exists( 'scorePointsMode', $result['content']['behaviour'] ), 'No PapiJo defaults should be injected.' );
 	}
@@ -80,7 +80,7 @@ $suite->test(
 
 		$suite->invoke( $converter, 'convert_question_set_content', array( &$content ) );
 
-		$suite->assertSame( 'H5P.DragTextPapiJo 1.1', $content['questions'][0]['library'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $content['questions'][0]['library'] );
 		$suite->assertSame( '*answer:tip*', $content['questions'][0]['params']['textField'] );
 		$suite->assertSame( 'H5P.DialogcardsPapiJo 1.17', $content['questions'][1]['library'] );
 		$suite->assertSame( 'H5P.Timeline 1.1', $content['questions'][2]['library'] );
@@ -131,23 +131,46 @@ $suite->test(
 );
 
 $suite->test(
-	'current Timeline conversion produces NDLA-style content',
+	'Timeline conversion helpers are removed',
+	static function () use ( $suite, $class ): void {
+		foreach (
+			array(
+				'convert_timeline_content',
+				'convert_timeline_slide',
+				'timeline_advanced_text',
+				'normalize_timeline_date',
+				'timeline_html_block',
+			) as $method
+		) {
+			$suite->assertSame( false, $class->hasMethod( $method ), $method . ' should not remain in production code.' );
+		}
+	}
+);
+
+$suite->test(
+	'Timeline packages are unsupported and do not generate converted output',
 	static function () use ( $suite, $converter ): void {
-		$content = array(
-			'timeline' => array(
-				'headline' => 'History',
-				'text'     => '<div>Introduction</div>',
-				'language' => 'fr',
-				'date'     => array( array( 'headline' => 'Event', 'text' => 'Details', 'startDate' => '2020, 01, 02' ) ),
-			),
+		$source_path = create_characterization_source_package(
+			'H5P.Timeline',
+			1,
+			1,
+			array( 'timeline' => array( 'headline' => 'History' ) )
 		);
+		$warnings = array();
+		$file     = array( 'path' => $source_path, 'name' => basename( $source_path ) );
 
-		$converted = $suite->invoke( $converter, 'convert_timeline_content', array( $content ) );
+		try {
+			$supported = $suite->invoke( $converter, 'get_supported_source_type', array( $source_path ) );
+			$output    = $suite->invoke( $converter, 'convert_file', array( $file, &$warnings ) );
 
-		$suite->assertSame( true, $converted['showTitleSlide'] );
-		$suite->assertSame( 'fr', $converted['language'] );
-		$suite->assertSame( '<p>Introduction</p>', $converted['titleSlide']['description']['params']['text'] );
-		$suite->assertSame( '2020-01-02', $converted['timelineItems'][0]['startDate'] );
+			$suite->assertSame( array(), $supported );
+			$suite->assertSame( '', $output );
+			$suite->assertSame( array( basename( $source_path ) . ': not a supported source H5P package.' ), $warnings );
+		} finally {
+			if ( is_file( $source_path ) ) {
+				unlink( $source_path );
+			}
+		}
 	}
 );
 
@@ -161,11 +184,10 @@ $suite->test(
 
 foreach (
 	array(
-		'future DragText target 1.3 and textual-tip migration' => 'Pending converter synchronization; current target is 1.1 and content is unchanged.',
-		'future MarkTheWords target 1.2 and behavior migration' => 'Pending converter synchronization; current target is 1.1 and content is unchanged.',
-		'future QuestionSet target 1.23 and exact nested whitelist' => 'Pending converter synchronization; current target is 1.21 and nested Dialogcards is converted.',
+		'future DragText textual-tip migration' => 'Target 1.3 is synchronized; content migration remains pending and content is unchanged.',
+		'future MarkTheWords behavior migration' => 'Target 1.2 is synchronized; content migration remains pending and content is unchanged.',
+		'future QuestionSet exact nested whitelist' => 'Target 1.23 is synchronized; nested Dialogcards is still converted.',
 		'future dependency rewrite across all sections for converted children only' => 'Pending converter synchronization; current replacement stops at the first match.',
-		'future Timeline rejection without generated output' => 'Pending converter synchronization; Timeline currently generates converted content.',
 	) as $name => $reason
 ) {
 	$suite->test(
@@ -184,6 +206,53 @@ function convert_characterization_package(
 	int $minor_version,
 	array $content
 ): array {
+	$source_path = create_characterization_source_package( $source_library, $major_version, $minor_version, $content );
+	$source_hash_before = hash_file( 'sha256', $source_path );
+	$warnings           = array();
+	$file               = array( 'path' => $source_path, 'name' => basename( $source_path ) );
+	$output_path        = $suite->invoke( $converter, 'convert_file', array( $file, &$warnings ) );
+	$library_dir        = $source_library . '-' . $major_version . '.' . $minor_version;
+
+	try {
+		$suite->assertSame( array(), $warnings );
+		$suite->assertTrue( is_string( $output_path ) && is_file( $output_path ), 'Conversion should create an output package.' );
+
+		$output_zip = new ZipArchive();
+		$suite->assertSame( true, $output_zip->open( $output_path ) );
+		$output_manifest = json_decode( (string) $output_zip->getFromName( 'h5p.json' ), true );
+		$output_content  = json_decode( (string) $output_zip->getFromName( 'content/content.json' ), true );
+		$has_library_files = false;
+		for ( $index = 0; $index < $output_zip->numFiles; $index++ ) {
+			$name = $output_zip->getNameIndex( $index );
+			if ( is_string( $name ) && str_starts_with( $name, $library_dir . '/' ) ) {
+				$has_library_files = true;
+			}
+		}
+		$output_zip->close();
+
+		return array(
+			'manifest'           => $output_manifest,
+			'content'            => $output_content,
+			'has_library_files'  => $has_library_files,
+			'source_hash_before' => $source_hash_before,
+			'source_hash_after'  => hash_file( 'sha256', $source_path ),
+		);
+	} finally {
+		if ( is_string( $output_path ) && is_file( $output_path ) ) {
+			unlink( $output_path );
+		}
+		if ( is_file( $source_path ) ) {
+			unlink( $source_path );
+		}
+	}
+}
+
+function create_characterization_source_package(
+	string $source_library,
+	int $major_version,
+	int $minor_version,
+	array $content
+): string {
 	$source_path = PAPIJO_TEST_TEMP_DIR . uniqid( 'source-', true ) . '.h5p';
 	$zip         = new ZipArchive();
 	if ( true !== $zip->open( $source_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
@@ -205,42 +274,6 @@ function convert_characterization_package(
 	$zip->addFromString( $library_dir . '/library.js', 'bundled library code' );
 	$zip->close();
 
-	$source_hash_before = hash_file( 'sha256', $source_path );
-	$warnings           = array();
-	$file               = array( 'path' => $source_path, 'name' => basename( $source_path ) );
-	$output_path        = $suite->invoke( $converter, 'convert_file', array( $file, &$warnings ) );
-
-	try {
-		$suite->assertSame( array(), $warnings );
-		$suite->assertTrue( is_string( $output_path ) && is_file( $output_path ), 'Conversion should create an output package.' );
-
-		$output_zip = new ZipArchive();
-		$suite->assertSame( true, $output_zip->open( $output_path ) );
-		$output_manifest = json_decode( (string) $output_zip->getFromName( 'h5p.json' ), true );
-		$output_content  = json_decode( (string) $output_zip->getFromName( 'content/content.json' ), true );
-		$has_library_files = false;
-		for ( $index = 0; $index < $output_zip->numFiles; $index++ ) {
-			$name = $output_zip->getNameIndex( $index );
-			if ( is_string( $name ) && str_starts_with( $name, $library_dir . '/' ) ) {
-				$has_library_files = true;
-			}
-		}
-		$output_zip->close();
-
-		return array(
-			'manifest'          => $output_manifest,
-			'content'           => $output_content,
-			'has_library_files' => $has_library_files,
-			'source_hash_before' => $source_hash_before,
-			'source_hash_after' => hash_file( 'sha256', $source_path ),
-		);
-	} finally {
-		if ( is_string( $output_path ) && is_file( $output_path ) ) {
-			unlink( $output_path );
-		}
-		if ( is_file( $source_path ) ) {
-			unlink( $source_path );
-		}
-	}
+	return $source_path;
 }
 

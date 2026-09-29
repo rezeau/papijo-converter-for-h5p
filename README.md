@@ -26,7 +26,6 @@ This independent plugin is not affiliated with or endorsed by the H5P project.
 - Mark the Words
 - Multimedia Choice
 - Question Set
-- Timeline (`H5P.Timeline` → `H5P.NDLATimelinePapiJo 0.2`)
 
 ## Installation
 

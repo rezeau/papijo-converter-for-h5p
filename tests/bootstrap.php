@@ -24,12 +24,6 @@ function wp_json_encode( $value, int $flags = 0, int $depth = 512 ) {
 	return json_encode( $value, $flags, $depth );
 }
 
-function wp_generate_uuid4(): string {
-	static $counter = 0;
-	$counter++;
-	return sprintf( '00000000-0000-4000-8000-%012d', $counter );
-}
-
 function get_temp_dir(): string {
 	return PAPIJO_TEST_TEMP_DIR;
 }

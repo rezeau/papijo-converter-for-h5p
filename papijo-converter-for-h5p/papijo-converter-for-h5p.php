@@ -49,14 +49,14 @@ final class Papi_Jo_H5P_Converter {
 			'target'       => 'H5P.DragTextPapiJo',
 			'target_label' => 'DragText Papi Jo',
 			'major'        => 1,
-			'minor'        => 1,
+			'minor'        => 3,
 		),
 		'H5P.MarkTheWords'    => array(
 			'label'        => 'Mark the Words',
 			'target'       => 'H5P.MarkTheWordsPapiJo',
 			'target_label' => 'MarkTheWords Papi Jo',
 			'major'        => 1,
-			'minor'        => 1,
+			'minor'        => 2,
 		),
 		'H5P.MultiMediaChoice' => array(
 			'label'        => 'Multimedia Choice',
@@ -70,15 +70,7 @@ final class Papi_Jo_H5P_Converter {
 			'target'       => 'H5P.QuestionSetPapiJo',
 			'target_label' => 'QuestionSet Papi Jo',
 			'major'        => 1,
-			'minor'        => 21,
-		),
-		'H5P.Timeline'        => array(
-			'label'        => 'Timeline',
-			'target'       => 'H5P.NDLATimelinePapiJo',
-			'target_label' => 'NDLA Timeline Papi Jo',
-			'major'        => 0,
-			'minor'        => 2,
-			'dependency'   => 'TimelineJS',
+			'minor'        => 23,
 		),
 	);
 
@@ -252,7 +244,7 @@ JS
 			<?php if ( empty( $files ) ) : ?>
 				<div class="h5p-exporter-empty">
 					<p><?php esc_html_e( 'No supported default .h5p export packages were found in the H5P exports folder.', 'papijo-converter-for-h5p' ); ?></p>
-					<p class="h5p-exporter-muted"><?php esc_html_e( 'Supported source types: Complex fill the blanks, Dialog Cards, Drag and Drop, Drag the Words, Mark the Words, Multimedia Choice, Question Set, and Timeline.', 'papijo-converter-for-h5p' ); ?></p>
+					<p class="h5p-exporter-muted"><?php esc_html_e( 'Supported source types: Complex fill the blanks, Dialog Cards, Drag and Drop, Drag the Words, Mark the Words, Multimedia Choice, and Question Set.', 'papijo-converter-for-h5p' ); ?></p>
 				</div>
 			<?php else : ?>
 				<form class="h5p-exporter-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -535,15 +527,6 @@ JS
 		if ( 'H5P.Dialogcards' === $source_machine && is_array( $content ) ) {
 			$this->convert_dialog_cards_content( $content );
 		}
-		if ( 'H5P.Timeline' === $source_machine ) {
-			if ( ! is_array( $content ) || ! isset( $content['timeline'] ) || ! is_array( $content['timeline'] ) ) {
-				$source_zip->close();
-				$warnings[] = $file['name'] . ': ' . esc_html__( 'could not convert Timeline content/content.json.', 'papijo-converter-for-h5p' );
-				return '';
-			}
-			$content = $this->convert_timeline_content( $content );
-		}
-
 		$output_path = $this->create_temp_file( 'h5p-papijo-package-', '.h5p' );
 		$output_zip  = new ZipArchive();
 		if ( true !== $output_zip->open( $output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
@@ -580,14 +563,13 @@ JS
 	}
 
 	private function replace_dependency( array &$manifest, string $source_machine, array $library ): bool {
-		$dependency_machine = isset( $library['dependency'] ) ? $library['dependency'] : $source_machine;
 		foreach ( array( 'preloadedDependencies', 'dynamicDependencies', 'editorDependencies' ) as $key ) {
 			if ( empty( $manifest[ $key ] ) || ! is_array( $manifest[ $key ] ) ) {
 				continue;
 			}
 
 			foreach ( $manifest[ $key ] as &$dependency ) {
-				if ( ! is_array( $dependency ) || ( $dependency['machineName'] ?? '' ) !== $dependency_machine ) {
+				if ( ! is_array( $dependency ) || ( $dependency['machineName'] ?? '' ) !== $source_machine ) {
 					continue;
 				}
 
@@ -604,7 +586,7 @@ JS
 	private function convert_question_set_content( array &$content ): void {
 		$map = array();
 		foreach ( self::LIBRARIES as $source => $library ) {
-			if ( in_array( $source, array( 'H5P.QuestionSet', 'H5P.Timeline' ), true ) ) {
+			if ( 'H5P.QuestionSet' === $source ) {
 				continue;
 			}
 
@@ -634,112 +616,6 @@ JS
 
 	private function convert_dialog_cards_content( array &$content ): void {
 		$this->wrap_dialog_media( $content );
-	}
-
-	private function convert_timeline_content( array $content ): array {
-		$timeline = $content['timeline'];
-		$converted = array(
-			'showTitleSlide' => true,
-			'titleSlide'     => $this->convert_timeline_slide( $timeline, true ),
-			'timelineItems'  => array(),
-			'behaviour'      => array(
-				'scalingMode'     => 'human',
-				'initialZoom'     => 2,
-				'timenavPosition' => 'bottom',
-				'startatend'      => false,
-				'startatslide'    => 1,
-			),
-			'language'       => ! empty( $timeline['language'] ) ? $timeline['language'] : 'en',
-		);
-
-		foreach ( isset( $timeline['date'] ) && is_array( $timeline['date'] ) ? $timeline['date'] : array() as $date ) {
-			if ( is_array( $date ) ) {
-				$converted['timelineItems'][] = $this->convert_timeline_slide( $date, false );
-			}
-		}
-
-		$eras = array();
-		foreach ( isset( $timeline['era'] ) && is_array( $timeline['era'] ) ? $timeline['era'] : array() as $era ) {
-			if ( ! is_array( $era ) ) {
-				continue;
-			}
-			$item = array();
-			if ( isset( $era['headline'] ) ) {
-				$item['name'] = (string) $era['headline'];
-			}
-			foreach ( array( 'startDate', 'endDate' ) as $date_key ) {
-				if ( ! empty( $era[ $date_key ] ) ) {
-					$item[ $date_key ] = $this->normalize_timeline_date( $era[ $date_key ] );
-				}
-			}
-			if ( ! empty( $item ) ) {
-				$eras[] = $item;
-			}
-		}
-		if ( ! empty( $eras ) ) {
-			$converted['eras'] = $eras;
-		}
-
-		return $converted;
-	}
-
-	private function convert_timeline_slide( array $slide, bool $is_title ): array {
-		$asset = isset( $slide['asset'] ) && is_array( $slide['asset'] ) ? $slide['asset'] : array();
-		$item = array(
-			'slideType'   => $is_title ? 'title' : 'regular',
-			'description' => $this->timeline_advanced_text( $slide['text'] ?? '' ),
-			'layout'      => 'right',
-			'mediaType'   => 'custom',
-			'appearance'  => array( 'backgroundType' => 'none', 'backgroundColor' => '#757575' ),
-		);
-		if ( ! $is_title ) {
-			$item['TextOrImage'] = 'text';
-			$item['customQuote'] = array(
-				'params' => array(), 'library' => 'H5P.SimpleTextareaPapiJo 1.0',
-				'subContentId' => wp_generate_uuid4(),
-				'metadata' => array( 'contentType' => 'Simple Textarea Papi Jo', 'license' => 'U' ),
-			);
-		}
-		if ( isset( $slide['headline'] ) ) {
-			$item['title'] = (string) $slide['headline'];
-		}
-		foreach ( array( 'startDate', 'endDate' ) as $date_key ) {
-			if ( ! empty( $slide[ $date_key ] ) ) {
-				$item[ $date_key ] = $this->normalize_timeline_date( $slide[ $date_key ] );
-			}
-		}
-		if ( ! empty( $asset['media'] ) ) {
-			$item['customMedia'] = (string) $asset['media'];
-		}
-		if ( ! empty( $asset['credit'] ) || ! empty( $asset['caption'] ) ) {
-			$item['info'] = array(
-				'credit' => $this->timeline_html_block( $asset['credit'] ?? '' ),
-				'caption' => $this->timeline_html_block( $asset['caption'] ?? '' ),
-			);
-		}
-		return $item;
-	}
-
-	private function timeline_advanced_text( $html ): array {
-		$html = trim( (string) $html );
-		$html = preg_replace( '/<div\b([^>]*)>/i', '<p$1>', $html );
-		$html = preg_replace( '/<\/div>/i', '</p>', $html );
-		$html = preg_replace( '/\s*\r?\n+\s*/', '', $html );
-		return array(
-			'params' => array( 'text' => trim( $html ) ),
-			'library' => 'H5P.AdvancedTextPapiJo 1.1',
-			'subContentId' => wp_generate_uuid4(),
-			'metadata' => array( 'contentType' => 'Text Papi Jo', 'license' => 'U', 'title' => 'Untitled Text Papi Jo' ),
-		);
-	}
-
-	private function normalize_timeline_date( $date ): string {
-		return preg_replace( '/\s*[-,]\s*/', '-', trim( (string) $date ) );
-	}
-
-	private function timeline_html_block( $value ): string {
-		$value = trim( (string) $value );
-		return '' === $value || preg_match( '/^\s*<(div|p|blockquote|ul|ol|figure|table|h[1-6])\b/i', $value ) ? $value : '<div>' . $value . '</div>';
 	}
 
 	private function wrap_dialog_media( &$value ): void {

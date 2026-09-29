@@ -31,7 +31,6 @@ Supported source H5P content types:
 * Mark the Words
 * Multimedia Choice
 * Question Set
-* Timeline
 
 Converted outputs:
 
@@ -42,7 +41,6 @@ Converted outputs:
 * MarkTheWords Papi Jo
 * MultiMediaChoice Papi Jo
 * QuestionSet Papi Jo
-* NDLA Timeline Papi Jo
 
 == Installation ==
 
