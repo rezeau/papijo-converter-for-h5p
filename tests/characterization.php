@@ -89,27 +89,68 @@ $suite->test(
 );
 
 $suite->test(
-	'current QuestionSet content replacement is recursive and includes Dialogcards',
+	'QuestionSet nested conversion follows the exact whitelist',
 	static function () use ( $suite, $converter ): void {
+		$dialog_params = array(
+			'dialogs' => array(
+				array(
+					'image'        => array( 'path' => 'images/nested.png' ),
+					'imageAltText' => 'Nested card',
+					'audio'        => array( array( 'path' => 'audio/nested.mp3' ) ),
+				),
+			),
+		);
 		$content = array(
 			'questions' => array(
+				array( 'library' => 'H5P.AdvancedBlanks 1.2', 'params' => array( 'marker' => 'advanced' ) ),
+				array( 'library' => 'H5P.DragQuestion 1.13', 'params' => array( 'marker' => 'drag-question' ) ),
 				array( 'library' => 'H5P.DragText 1.10', 'params' => array( 'textField' => '*answer:tip*' ) ),
 				array( 'library' => 'H5P.MarkTheWords 1.11', 'params' => array( 'textField' => 'Mark *this*.', 'behaviour' => array( 'showScorePoints' => false, 'unrelated' => 7 ) ) ),
-				array( 'library' => 'H5P.Dialogcards 1.9', 'params' => array() ),
-				array( 'library' => 'H5P.Timeline 1.1', 'params' => array() ),
+				array( 'library' => 'H5P.MultiMediaChoice 0.3', 'params' => array( 'marker' => 'multimedia' ) ),
+				array( 'library' => 'H5P.Dialogcards 1.9', 'params' => $dialog_params ),
+				array( 'library' => 'H5P.Unrelated 2.4', 'params' => array( 'marker' => 'unrelated' ) ),
 			),
 		);
 
 		$suite->invoke( $converter, 'convert_question_set_content', array( &$content ) );
 
-		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $content['questions'][0]['library'] );
-		$suite->assertSame( '*answer::tip*', $content['questions'][0]['params']['textField'] );
-		$suite->assertSame( 'H5P.MarkTheWordsPapiJo 1.2', $content['questions'][1]['library'] );
-		$suite->assertSame( 'Mark *this*.', $content['questions'][1]['params']['textField'], 'Nested unrelated params should remain unchanged.' );
-		$suite->assertSame( array( 'unrelated' => 7, 'displayTicksMode' => 'ticksOnly' ), $content['questions'][1]['params']['behaviour'] );
-		$suite->assertTrue( ! array_key_exists( 'submitAnswerButton', $content['questions'][1]['params']['behaviour'] ), 'Nested conversion should not add submitAnswerButton.' );
-		$suite->assertSame( 'H5P.DialogcardsPapiJo 1.17', $content['questions'][2]['library'] );
-		$suite->assertSame( 'H5P.Timeline 1.1', $content['questions'][3]['library'] );
+		$suite->assertSame( 'H5P.AdvancedBlanksPapiJo 1.4', $content['questions'][0]['library'] );
+		$suite->assertSame( array( 'marker' => 'advanced' ), $content['questions'][0]['params'] );
+		$suite->assertSame( 'H5P.DragQuestionPapiJo 1.14', $content['questions'][1]['library'] );
+		$suite->assertSame( array( 'marker' => 'drag-question' ), $content['questions'][1]['params'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $content['questions'][2]['library'] );
+		$suite->assertSame( '*answer::tip*', $content['questions'][2]['params']['textField'] );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo 1.2', $content['questions'][3]['library'] );
+		$suite->assertSame( 'Mark *this*.', $content['questions'][3]['params']['textField'], 'Nested unrelated params should remain unchanged.' );
+		$suite->assertSame( array( 'unrelated' => 7, 'displayTicksMode' => 'ticksOnly' ), $content['questions'][3]['params']['behaviour'] );
+		$suite->assertTrue( ! array_key_exists( 'submitAnswerButton', $content['questions'][3]['params']['behaviour'] ), 'Nested conversion should not add submitAnswerButton.' );
+		$suite->assertSame( 'H5P.MultiMediaChoicePapiJo 0.4', $content['questions'][4]['library'] );
+		$suite->assertSame( array( 'marker' => 'multimedia' ), $content['questions'][4]['params'] );
+		$suite->assertSame( 'H5P.Dialogcards 1.9', $content['questions'][5]['library'] );
+		$suite->assertSame( $dialog_params, $content['questions'][5]['params'], 'Nested Dialogcards params should remain untouched.' );
+		$suite->assertSame( 'H5P.Unrelated 2.4', $content['questions'][6]['library'] );
+		$suite->assertSame( array( 'marker' => 'unrelated' ), $content['questions'][6]['params'] );
+	}
+);
+
+$suite->test(
+	'QuestionSet nested whitelist is explicit and QuestionSet target remains 1.23',
+	static function () use ( $suite, $class ): void {
+		$suite->assertSame(
+			array(
+				'H5P.AdvancedBlanks',
+				'H5P.DragQuestion',
+				'H5P.DragText',
+				'H5P.MarkTheWords',
+				'H5P.MultiMediaChoice',
+			),
+			$class->getConstant( 'QUESTION_SET_CHILD_LIBRARIES' )
+		);
+
+		$libraries = $class->getConstant( 'LIBRARIES' );
+		$suite->assertSame( 'H5P.QuestionSetPapiJo', $libraries['H5P.QuestionSet']['target'] );
+		$suite->assertSame( 1, $libraries['H5P.QuestionSet']['major'] );
+		$suite->assertSame( 23, $libraries['H5P.QuestionSet']['minor'] );
 	}
 );
 
@@ -270,7 +311,6 @@ $suite->test(
 
 foreach (
 	array(
-		'future QuestionSet exact nested whitelist' => 'Target 1.23 is synchronized; nested Dialogcards is still converted.',
 		'future dependency rewrite across all sections for converted children only' => 'Pending converter synchronization; current replacement stops at the first match.',
 	) as $name => $reason
 ) {

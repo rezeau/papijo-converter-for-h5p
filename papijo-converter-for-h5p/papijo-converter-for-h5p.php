@@ -74,6 +74,14 @@ final class Papi_Jo_H5P_Converter {
 		),
 	);
 
+	private const QUESTION_SET_CHILD_LIBRARIES = array(
+		'H5P.AdvancedBlanks',
+		'H5P.DragQuestion',
+		'H5P.DragText',
+		'H5P.MarkTheWords',
+		'H5P.MultiMediaChoice',
+	);
+
 	/**
 	 * @var string
 	 */
@@ -591,11 +599,8 @@ JS
 
 	private function convert_question_set_content( array &$content ): void {
 		$map = array();
-		foreach ( self::LIBRARIES as $source => $library ) {
-			if ( 'H5P.QuestionSet' === $source ) {
-				continue;
-			}
-
+		foreach ( self::QUESTION_SET_CHILD_LIBRARIES as $source ) {
+			$library        = self::LIBRARIES[ $source ];
 			$map[ $source ] = $library['target'] . ' ' . $library['major'] . '.' . $library['minor'];
 		}
 
