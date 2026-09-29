@@ -30,18 +30,26 @@ $suite->test(
 );
 
 $suite->test(
-	'current standalone DragText conversion leaves content unchanged',
+	'standalone DragText conversion migrates textual tips without changing unrelated content',
 	static function () use ( $suite, $converter ): void {
 		$content = array(
 			'taskDescription' => 'Keep: punctuation outside.',
-			'textField'       => 'First *answer:tip* and *second::existing* with \\+good\\-bad.',
+			'textField'       => 'Prompt: choose *browser:What type of program is Chrome?*, *engine::Already migrated*, and *plain*. Check *plus:Tip\\+Correct: yes* and *minus:Tip\\-Incorrect: no*.',
+			'extra'           => array( 'preserve' => true ),
 		);
 		$result = convert_characterization_package( $suite, $converter, 'H5P.DragText', 1, 10, $content );
 
 		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['mainLibrary'] );
 		$suite->assertSame( 1, $result['manifest']['preloadedDependencies'][0]['majorVersion'] );
 		$suite->assertSame( 3, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
-		$suite->assertSame( $content, $result['content'] );
+		$suite->assertSame(
+			'Prompt: choose *browser::What type of program is Chrome?*, *engine::Already migrated*, and *plain*. Check *plus::Tip\\+Correct: yes* and *minus::Tip\\-Incorrect: no*.',
+			$result['content']['textField'],
+			'Only single-colon textual tips inside answer expressions should be migrated.'
+		);
+		$suite->assertSame( $content['taskDescription'], $result['content']['taskDescription'], 'Ordinary outside colons must remain unchanged.' );
+		$suite->assertSame( $content['extra'], $result['content']['extra'], 'Unrelated fields must remain unchanged.' );
+		$suite->assertSame( array_keys( $content ), array_keys( $result['content'] ), 'No PapiJo defaults or unrelated fields should be injected.' );
 		$suite->assertTrue( ! $result['has_library_files'], 'Bundled library directories should be removed from converted packages.' );
 		$suite->assertSame( $result['source_hash_before'], $result['source_hash_after'], 'The source package must remain untouched.' );
 	}
@@ -81,9 +89,29 @@ $suite->test(
 		$suite->invoke( $converter, 'convert_question_set_content', array( &$content ) );
 
 		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $content['questions'][0]['library'] );
-		$suite->assertSame( '*answer:tip*', $content['questions'][0]['params']['textField'] );
+		$suite->assertSame( '*answer::tip*', $content['questions'][0]['params']['textField'] );
 		$suite->assertSame( 'H5P.DialogcardsPapiJo 1.17', $content['questions'][1]['library'] );
 		$suite->assertSame( 'H5P.Timeline 1.1', $content['questions'][2]['library'] );
+	}
+);
+
+$suite->test(
+	'DragText textual-tip migration is idempotent and preserves escaped feedback',
+	static function () use ( $suite, $converter ): void {
+		$content = array(
+			'textField' => 'Outside: unchanged *first:tip\\+Good: yes\\-Bad: no* / *second::ready*.',
+		);
+
+		$suite->invoke( $converter, 'convert_drag_text_content', array( &$content ) );
+		$once = $content;
+		$suite->invoke( $converter, 'convert_drag_text_content', array( &$content ) );
+
+		$suite->assertSame(
+			'Outside: unchanged *first::tip\\+Good: yes\\-Bad: no* / *second::ready*.',
+			$content['textField'],
+			'Feedback markers and feedback colons should be preserved exactly.'
+		);
+		$suite->assertSame( $once, $content, 'Running the migration twice must not change already migrated text.' );
 	}
 );
 
@@ -184,7 +212,6 @@ $suite->test(
 
 foreach (
 	array(
-		'future DragText textual-tip migration' => 'Target 1.3 is synchronized; content migration remains pending and content is unchanged.',
 		'future MarkTheWords behavior migration' => 'Target 1.2 is synchronized; content migration remains pending and content is unchanged.',
 		'future QuestionSet exact nested whitelist' => 'Target 1.23 is synchronized; nested Dialogcards is still converted.',
 		'future dependency rewrite across all sections for converted children only' => 'Pending converter synchronization; current replacement stops at the first match.',

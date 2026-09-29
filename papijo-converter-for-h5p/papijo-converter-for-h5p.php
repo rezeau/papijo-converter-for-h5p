@@ -521,6 +521,9 @@ JS
 
 		$content_json = $source_zip->getFromName( 'content/content.json' );
 		$content      = false !== $content_json ? json_decode( $content_json, true ) : null;
+		if ( 'H5P.DragText' === $source_machine && is_array( $content ) ) {
+			$this->convert_drag_text_content( $content );
+		}
 		if ( 'H5P.QuestionSet' === $source_machine && is_array( $content ) ) {
 			$this->convert_question_set_content( $content );
 		}
@@ -606,12 +609,47 @@ JS
 				$parts = explode( ' ', trim( $child ), 2 );
 				if ( isset( $map[ $parts[0] ] ) ) {
 					$child = $map[ $parts[0] ];
+					if ( 'H5P.DragText' === $parts[0] && isset( $value['params'] ) && is_array( $value['params'] ) ) {
+						$this->convert_drag_text_content( $value['params'] );
+					}
 					continue;
 				}
 			}
 
 			$this->replace_library_references( $child, $map );
 		}
+	}
+
+	private function convert_drag_text_content( array &$content ): void {
+		if ( ! isset( $content['textField'] ) || ! is_string( $content['textField'] ) ) {
+			return;
+		}
+
+		$content['textField'] = $this->convert_drag_text_textual_tips( $content['textField'] );
+	}
+
+	private function convert_drag_text_textual_tips( string $text ): string {
+		return preg_replace_callback(
+			'/\*([^*]*)\*/',
+			static function ( array $matches ): string {
+				$answer          = $matches[1];
+				$feedback_offset = null;
+
+				foreach ( array( '\\+', '\\-' ) as $feedback_marker ) {
+					$offset = strpos( $answer, $feedback_marker );
+					if ( false !== $offset && ( null === $feedback_offset || $offset < $feedback_offset ) ) {
+						$feedback_offset = $offset;
+					}
+				}
+
+				$answer_and_tip = null === $feedback_offset ? $answer : substr( $answer, 0, $feedback_offset );
+				$feedback       = null === $feedback_offset ? '' : substr( $answer, $feedback_offset );
+				$answer_and_tip = preg_replace( '/(?<!:):(?!:)/', '::', $answer_and_tip, 1 );
+
+				return '*' . $answer_and_tip . $feedback . '*';
+			},
+			$text
+		);
 	}
 
 	private function convert_dialog_cards_content( array &$content ): void {
