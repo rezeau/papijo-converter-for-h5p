@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Papijo Package Converter for H5P
  * Description: Converts supported H5P packages into their matching Papi Jo content types. Use it from Tools > Papijo Package Converter for H5P.
- * Version: 2.3.0
+ * Version: 2.4.0
  * Requires at least: 5.8
  * Requires PHP: 8.0
  * Author: Joseph Rézeau (Papi Jo)
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Papi_Jo_H5P_Converter {
-	private const VERSION      = '2.3.0';
+	private const VERSION      = '2.4.0';
 	private const MENU_SLUG    = 'papijo-converter-for-h5p';
 	private const ACTION       = 'papi_jo_h5p_converter_convert';
 	private const NONCE_ACTION = 'papi_jo_h5p_converter_convert';

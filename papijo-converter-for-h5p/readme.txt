@@ -2,9 +2,9 @@
 Contributors: papijo
 Tags: h5p, export, conversion, admin, content
 Requires at least: 5.8
-Tested up to: 7.1
+Tested up to: 7.1.2
 Requires PHP: 8.0
-Stable tag: 2.3.0
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,14 @@ Converted outputs:
 Converted packages are always downloaded as one ZIP archive. Temporary conversion files are cleaned up after each request.
 
 == Changelog ==
+
+= 2.4.0 =
+* Update conversion targets to DragTextPapiJo 1.3, MarkTheWordsPapiJo 1.2, and QuestionSetPapiJo 1.23.
+* Add DragText textual-tip migration for standalone content and DragText questions nested in QuestionSet.
+* Add MarkTheWords behavior migration for standalone content and MarkTheWords questions nested in QuestionSet.
+* Restrict QuestionSet nested conversion to AdvancedBlanks, DragQuestion, DragText, MarkTheWords, and MultiMediaChoice.
+* Synchronize QuestionSet dependencies only for child types actually converted, across preloaded, dynamic, and editor dependencies.
+* Remove Timeline conversion to NDLATimelinePapiJo.
 
 = 2.3.0 =
 Add conversion support for Timeline packages to NDLA Timeline Papi Jo 0.2.
