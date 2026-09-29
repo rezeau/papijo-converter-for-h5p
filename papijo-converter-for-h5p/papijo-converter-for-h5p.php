@@ -662,10 +662,12 @@ JS
 				}
 
 				$answer_and_tip = null === $feedback_offset ? $answer : substr( $answer, 0, $feedback_offset );
-				$feedback       = null === $feedback_offset ? '' : substr( $answer, $feedback_offset );
-				$answer_and_tip = preg_replace( '/(?<!:):(?!:)/', '::', $answer_and_tip, 1 );
+				if ( ! preg_match( '/:+/', $answer_and_tip, $delimiter, PREG_OFFSET_CAPTURE ) || ':' !== $delimiter[0][0] ) {
+					return $matches[0];
+				}
 
-				return '*' . $answer_and_tip . $feedback . '*';
+				$delimiter_offset = $delimiter[0][1];
+				return '*' . substr( $answer, 0, $delimiter_offset ) . '::' . substr( $answer, $delimiter_offset + 1 ) . '*';
 			},
 			$text
 		);

@@ -56,6 +56,43 @@ $suite->test(
 );
 
 $suite->test(
+	'DragText migration uses only the first colon run as the textual-tip delimiter',
+	static function () use ( $suite, $converter ): void {
+		$text = '*answer:tip* | *ready::tip* | *detailed:tip: detail* | *migrated::tip: detail*';
+		$expected = '*answer::tip* | *ready::tip* | *detailed::tip: detail* | *migrated::tip: detail*';
+		$standalone = convert_characterization_package(
+			$suite,
+			$converter,
+			'H5P.DragText',
+			1,
+			10,
+			array( 'textField' => $text )
+		);
+		$suite->assertSame(
+			$expected,
+			$standalone['content']['textField'],
+			'An existing double-colon delimiter must prevent later colons from being migrated.'
+		);
+
+		$question_set = array(
+			'questions' => array(
+				array(
+					'library' => 'H5P.DragText 1.10',
+					'params'  => array( 'textField' => '*answer::tip: detail*' ),
+				),
+			),
+		);
+		$suite->invoke( $converter, 'convert_question_set_content', array( &$question_set ) );
+		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $question_set['questions'][0]['library'] );
+		$suite->assertSame(
+			'*answer::tip: detail*',
+			$question_set['questions'][0]['params']['textField'],
+			'Nested DragText must preserve an expression whose first colon run is already doubled.'
+		);
+	}
+);
+
+$suite->test(
 	'standalone MarkTheWords conversion migrates strict boolean score settings',
 	static function () use ( $suite, $converter ): void {
 		$true_content = array(
