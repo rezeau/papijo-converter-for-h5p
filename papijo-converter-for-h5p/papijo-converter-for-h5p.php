@@ -536,7 +536,10 @@ JS
 			$this->convert_mark_the_words_content( $content );
 		}
 		if ( 'H5P.QuestionSet' === $source_machine && is_array( $content ) ) {
-			$this->convert_question_set_content( $content );
+			$converted_child_sources = $this->convert_question_set_content( $content );
+			foreach ( $converted_child_sources as $child_source ) {
+				$this->replace_dependency( $manifest, $child_source, self::LIBRARIES[ $child_source ] );
+			}
 		}
 		if ( 'H5P.Dialogcards' === $source_machine && is_array( $content ) ) {
 			$this->convert_dialog_cards_content( $content );
@@ -577,6 +580,7 @@ JS
 	}
 
 	private function replace_dependency( array &$manifest, string $source_machine, array $library ): bool {
+		$replaced = false;
 		foreach ( array( 'preloadedDependencies', 'dynamicDependencies', 'editorDependencies' ) as $key ) {
 			if ( empty( $manifest[ $key ] ) || ! is_array( $manifest[ $key ] ) ) {
 				continue;
@@ -590,24 +594,27 @@ JS
 				$dependency['machineName']  = $library['target'];
 				$dependency['majorVersion'] = (int) $library['major'];
 				$dependency['minorVersion'] = (int) $library['minor'];
-				return true;
+				$replaced                   = true;
 			}
 		}
 
-		return false;
+		return $replaced;
 	}
 
-	private function convert_question_set_content( array &$content ): void {
+	private function convert_question_set_content( array &$content ): array {
 		$map = array();
 		foreach ( self::QUESTION_SET_CHILD_LIBRARIES as $source ) {
 			$library        = self::LIBRARIES[ $source ];
 			$map[ $source ] = $library['target'] . ' ' . $library['major'] . '.' . $library['minor'];
 		}
 
-		$this->replace_library_references( $content, $map );
+		$converted_sources = array();
+		$this->replace_library_references( $content, $map, $converted_sources );
+
+		return array_keys( $converted_sources );
 	}
 
-	private function replace_library_references( &$value, array $map ): void {
+	private function replace_library_references( &$value, array $map, array &$converted_sources ): void {
 		if ( ! is_array( $value ) ) {
 			return;
 		}
@@ -616,6 +623,7 @@ JS
 			if ( 'library' === $key && is_string( $child ) ) {
 				$parts = explode( ' ', trim( $child ), 2 );
 				if ( isset( $map[ $parts[0] ] ) ) {
+					$converted_sources[ $parts[0] ] = true;
 					$child = $map[ $parts[0] ];
 					if ( 'H5P.DragText' === $parts[0] && isset( $value['params'] ) && is_array( $value['params'] ) ) {
 						$this->convert_drag_text_content( $value['params'] );
@@ -627,7 +635,7 @@ JS
 				}
 			}
 
-			$this->replace_library_references( $child, $map );
+			$this->replace_library_references( $child, $map, $converted_sources );
 		}
 	}
 

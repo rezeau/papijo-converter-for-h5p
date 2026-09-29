@@ -215,21 +215,35 @@ $suite->test(
 );
 
 $suite->test(
-	'current dependency replacement changes only the first matching occurrence',
+	'dependency replacement updates every matching occurrence and preserves unrelated fields',
 	static function () use ( $suite, $converter, $class ): void {
 		$libraries = $class->getConstant( 'LIBRARIES' );
 		$manifest  = array(
-			'preloadedDependencies' => array( array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 10 ) ),
-			'dynamicDependencies'   => array( array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 10 ) ),
-			'editorDependencies'    => array( array( 'machineName' => 'H5P.Unrelated', 'majorVersion' => 1, 'minorVersion' => 0 ) ),
+			'preloadedDependencies' => array(
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 10, 'custom' => 'first' ),
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 9, 'custom' => 'second' ),
+			),
+			'dynamicDependencies' => array(
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 8 ),
+			),
+			'editorDependencies' => array(
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 7 ),
+				array( 'machineName' => 'H5P.Unrelated', 'majorVersion' => 1, 'minorVersion' => 0 ),
+			),
 		);
 
 		$replaced = $suite->invoke( $converter, 'replace_dependency', array( &$manifest, 'H5P.DragText', $libraries['H5P.DragText'] ) );
 
 		$suite->assertSame( true, $replaced );
 		$suite->assertSame( 'H5P.DragTextPapiJo', $manifest['preloadedDependencies'][0]['machineName'] );
-		$suite->assertSame( 'H5P.DragText', $manifest['dynamicDependencies'][0]['machineName'] );
-		$suite->assertSame( 'H5P.Unrelated', $manifest['editorDependencies'][0]['machineName'] );
+		$suite->assertSame( 'first', $manifest['preloadedDependencies'][0]['custom'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $manifest['preloadedDependencies'][1]['machineName'] );
+		$suite->assertSame( 'second', $manifest['preloadedDependencies'][1]['custom'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $manifest['dynamicDependencies'][0]['machineName'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $manifest['editorDependencies'][0]['machineName'] );
+		$suite->assertSame( 1, $manifest['editorDependencies'][0]['majorVersion'] );
+		$suite->assertSame( 3, $manifest['editorDependencies'][0]['minorVersion'] );
+		$suite->assertSame( 'H5P.Unrelated', $manifest['editorDependencies'][1]['machineName'] );
 	}
 );
 
@@ -309,18 +323,79 @@ $suite->test(
 	}
 );
 
-foreach (
-	array(
-		'future dependency rewrite across all sections for converted children only' => 'Pending converter synchronization; current replacement stops at the first match.',
-	) as $name => $reason
-) {
-	$suite->test(
-		$name,
-		static function () use ( $suite, $reason ): void {
-			$suite->pending( $reason );
-		}
-	);
-}
+$suite->test(
+	'QuestionSet rewrites dependencies only for child source types actually converted',
+	static function () use ( $suite, $converter ): void {
+		$content = array(
+			'questions' => array(
+				array( 'library' => 'H5P.DragText 1.10', 'params' => array( 'textField' => '*answer:tip*' ) ),
+				array( 'library' => 'H5P.MarkTheWords 1.11', 'params' => array( 'behaviour' => array( 'showScorePoints' => true ) ) ),
+				array( 'library' => 'H5P.MultiMediaChoice 0.3', 'params' => array( 'marker' => 'no-dependency-present' ) ),
+				array( 'library' => 'H5P.Dialogcards 1.9', 'params' => array( 'marker' => 'dialog-unchanged' ) ),
+				array( 'library' => 'H5P.Unrelated 2.4', 'params' => array( 'marker' => 'unrelated-child' ) ),
+			),
+		);
+		$manifest = array(
+			'title'                 => 'QuestionSet dependency fixture',
+			'mainLibrary'           => 'H5P.QuestionSet',
+			'preloadedDependencies' => array(
+				array( 'machineName' => 'H5P.QuestionSet', 'majorVersion' => 1, 'minorVersion' => 20, 'topLevel' => 'preserve' ),
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 10, 'occurrence' => 'first' ),
+				array( 'machineName' => 'H5P.AdvancedBlanks', 'majorVersion' => 1, 'minorVersion' => 2, 'unused' => true ),
+				array( 'machineName' => 'H5P.Dialogcards', 'majorVersion' => 1, 'minorVersion' => 9, 'nestedEligible' => false ),
+				array( 'machineName' => 'H5P.Unrelated', 'majorVersion' => 2, 'minorVersion' => 4 ),
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 9, 'occurrence' => 'second' ),
+			),
+			'dynamicDependencies' => array(
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 8 ),
+				array( 'machineName' => 'H5P.MarkTheWords', 'majorVersion' => 1, 'minorVersion' => 11, 'custom' => 'dynamic' ),
+			),
+			'editorDependencies' => array(
+				array( 'machineName' => 'H5P.DragText', 'majorVersion' => 1, 'minorVersion' => 7 ),
+				array( 'machineName' => 'H5P.MarkTheWords', 'majorVersion' => 1, 'minorVersion' => 10, 'custom' => 'editor' ),
+			),
+		);
+		$result = convert_characterization_package( $suite, $converter, 'H5P.QuestionSet', 1, 20, $content, $manifest );
+
+		$suite->assertSame( 'H5P.QuestionSetPapiJo', $result['manifest']['mainLibrary'] );
+		$suite->assertSame( 'H5P.QuestionSetPapiJo', $result['manifest']['preloadedDependencies'][0]['machineName'] );
+		$suite->assertSame( 23, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
+		$suite->assertSame( 'preserve', $result['manifest']['preloadedDependencies'][0]['topLevel'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['preloadedDependencies'][1]['machineName'] );
+		$suite->assertSame( 3, $result['manifest']['preloadedDependencies'][1]['minorVersion'] );
+		$suite->assertSame( 'first', $result['manifest']['preloadedDependencies'][1]['occurrence'] );
+		$suite->assertSame( 'H5P.AdvancedBlanks', $result['manifest']['preloadedDependencies'][2]['machineName'], 'Unused whitelisted dependencies should remain unchanged.' );
+		$suite->assertSame( 'H5P.Dialogcards', $result['manifest']['preloadedDependencies'][3]['machineName'], 'Nested-ineligible Dialogcards dependencies should remain unchanged.' );
+		$suite->assertSame( 'H5P.Unrelated', $result['manifest']['preloadedDependencies'][4]['machineName'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['preloadedDependencies'][5]['machineName'] );
+		$suite->assertSame( 'second', $result['manifest']['preloadedDependencies'][5]['occurrence'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['dynamicDependencies'][0]['machineName'] );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo', $result['manifest']['dynamicDependencies'][1]['machineName'] );
+		$suite->assertSame( 2, $result['manifest']['dynamicDependencies'][1]['minorVersion'] );
+		$suite->assertSame( 'dynamic', $result['manifest']['dynamicDependencies'][1]['custom'] );
+		$suite->assertSame( 'H5P.DragTextPapiJo', $result['manifest']['editorDependencies'][0]['machineName'] );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo', $result['manifest']['editorDependencies'][1]['machineName'] );
+		$suite->assertSame( 'editor', $result['manifest']['editorDependencies'][1]['custom'] );
+
+		$all_dependencies = array_merge(
+			$result['manifest']['preloadedDependencies'],
+			$result['manifest']['dynamicDependencies'],
+			$result['manifest']['editorDependencies']
+		);
+		$dependency_names = array_column( $all_dependencies, 'machineName' );
+		$suite->assertTrue( ! in_array( 'H5P.MultiMediaChoice', $dependency_names, true ), 'Missing source dependencies should not be added.' );
+		$suite->assertTrue( ! in_array( 'H5P.MultiMediaChoicePapiJo', $dependency_names, true ), 'Missing target dependencies should not be added.' );
+
+		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $result['content']['questions'][0]['library'] );
+		$suite->assertSame( '*answer::tip*', $result['content']['questions'][0]['params']['textField'] );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo 1.2', $result['content']['questions'][1]['library'] );
+		$suite->assertSame( array( 'displayTicksMode' => 'ticksAndScorepoints' ), $result['content']['questions'][1]['params']['behaviour'] );
+		$suite->assertSame( 'H5P.MultiMediaChoicePapiJo 0.4', $result['content']['questions'][2]['library'] );
+		$suite->assertSame( 'H5P.Dialogcards 1.9', $result['content']['questions'][3]['library'] );
+		$suite->assertSame( array( 'marker' => 'dialog-unchanged' ), $result['content']['questions'][3]['params'] );
+		$suite->assertSame( 'H5P.Unrelated 2.4', $result['content']['questions'][4]['library'] );
+	}
+);
 
 function convert_characterization_package(
 	CharacterizationSuite $suite,
@@ -328,9 +403,10 @@ function convert_characterization_package(
 	string $source_library,
 	int $major_version,
 	int $minor_version,
-	array $content
+	array $content,
+	?array $manifest = null
 ): array {
-	$source_path = create_characterization_source_package( $source_library, $major_version, $minor_version, $content );
+	$source_path = create_characterization_source_package( $source_library, $major_version, $minor_version, $content, $manifest );
 	$source_hash_before = hash_file( 'sha256', $source_path );
 	$warnings           = array();
 	$file               = array( 'path' => $source_path, 'name' => basename( $source_path ) );
@@ -375,7 +451,8 @@ function create_characterization_source_package(
 	string $source_library,
 	int $major_version,
 	int $minor_version,
-	array $content
+	array $content,
+	?array $manifest = null
 ): string {
 	$source_path = PAPIJO_TEST_TEMP_DIR . uniqid( 'source-', true ) . '.h5p';
 	$zip         = new ZipArchive();
@@ -383,13 +460,15 @@ function create_characterization_source_package(
 		throw new RuntimeException( 'Could not create a source fixture.' );
 	}
 
-	$manifest = array(
-		'title'                 => 'Characterization fixture',
-		'mainLibrary'           => $source_library,
-		'preloadedDependencies' => array(
-			array( 'machineName' => $source_library, 'majorVersion' => $major_version, 'minorVersion' => $minor_version ),
-		),
-	);
+	if ( null === $manifest ) {
+		$manifest = array(
+			'title'                 => 'Characterization fixture',
+			'mainLibrary'           => $source_library,
+			'preloadedDependencies' => array(
+				array( 'machineName' => $source_library, 'majorVersion' => $major_version, 'minorVersion' => $minor_version ),
+			),
+		);
+	}
 	$library_dir = $source_library . '-' . $major_version . '.' . $minor_version;
 	$zip->addFromString( 'h5p.json', json_encode( $manifest, JSON_UNESCAPED_SLASHES ) );
 	$zip->addFromString( 'content/content.json', json_encode( $content, JSON_UNESCAPED_SLASHES ) );
