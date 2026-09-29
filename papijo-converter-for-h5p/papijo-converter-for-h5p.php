@@ -524,6 +524,9 @@ JS
 		if ( 'H5P.DragText' === $source_machine && is_array( $content ) ) {
 			$this->convert_drag_text_content( $content );
 		}
+		if ( 'H5P.MarkTheWords' === $source_machine && is_array( $content ) ) {
+			$this->convert_mark_the_words_content( $content );
+		}
 		if ( 'H5P.QuestionSet' === $source_machine && is_array( $content ) ) {
 			$this->convert_question_set_content( $content );
 		}
@@ -612,6 +615,9 @@ JS
 					if ( 'H5P.DragText' === $parts[0] && isset( $value['params'] ) && is_array( $value['params'] ) ) {
 						$this->convert_drag_text_content( $value['params'] );
 					}
+					if ( 'H5P.MarkTheWords' === $parts[0] && isset( $value['params'] ) && is_array( $value['params'] ) ) {
+						$this->convert_mark_the_words_content( $value['params'] );
+					}
 					continue;
 				}
 			}
@@ -650,6 +656,25 @@ JS
 			},
 			$text
 		);
+	}
+
+	private function convert_mark_the_words_content( array &$content ): void {
+		if ( ! isset( $content['behaviour'] ) || ! is_array( $content['behaviour'] ) || ! array_key_exists( 'showScorePoints', $content['behaviour'] ) ) {
+			return;
+		}
+
+		$show_score_points = $content['behaviour']['showScorePoints'];
+		unset( $content['behaviour']['showScorePoints'] );
+
+		if ( array_key_exists( 'displayTicksMode', $content['behaviour'] ) ) {
+			return;
+		}
+
+		if ( true === $show_score_points ) {
+			$content['behaviour']['displayTicksMode'] = 'ticksAndScorepoints';
+		} elseif ( false === $show_score_points ) {
+			$content['behaviour']['displayTicksMode'] = 'ticksOnly';
+		}
 	}
 
 	private function convert_dialog_cards_content( array &$content ): void {

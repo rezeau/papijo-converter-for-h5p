@@ -56,22 +56,35 @@ $suite->test(
 );
 
 $suite->test(
-	'current standalone MarkTheWords conversion preserves parameters without injecting defaults',
+	'standalone MarkTheWords conversion migrates strict boolean score settings',
 	static function () use ( $suite, $converter ): void {
-		$content = array(
+		$true_content = array(
 			'textField' => 'Mark *these* words.',
 			'behaviour' => array(
-				'showScorePoints'   => true,
-				'displayTicksMode'  => 'alwaysShow',
+				'showScorePoints'    => true,
 				'submitAnswerButton' => false,
+				'unrelated'          => 'preserve',
 			),
+			'metadata' => array( 'preserve' => true ),
 		);
-		$result = convert_characterization_package( $suite, $converter, 'H5P.MarkTheWords', 1, 11, $content );
+		$false_content = array(
+			'textField' => 'Mark *those* words.',
+			'behaviour' => array( 'showScorePoints' => false ),
+		);
+		$true_result  = convert_characterization_package( $suite, $converter, 'H5P.MarkTheWords', 1, 11, $true_content );
+		$false_result = convert_characterization_package( $suite, $converter, 'H5P.MarkTheWords', 1, 11, $false_content );
 
-		$suite->assertSame( 'H5P.MarkTheWordsPapiJo', $result['manifest']['mainLibrary'] );
-		$suite->assertSame( 2, $result['manifest']['preloadedDependencies'][0]['minorVersion'] );
-		$suite->assertSame( $content, $result['content'] );
-		$suite->assertTrue( ! array_key_exists( 'scorePointsMode', $result['content']['behaviour'] ), 'No PapiJo defaults should be injected.' );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo', $true_result['manifest']['mainLibrary'] );
+		$suite->assertSame( 2, $true_result['manifest']['preloadedDependencies'][0]['minorVersion'] );
+		$suite->assertSame( 'ticksAndScorepoints', $true_result['content']['behaviour']['displayTicksMode'] );
+		$suite->assertTrue( ! array_key_exists( 'showScorePoints', $true_result['content']['behaviour'] ), 'Legacy true setting should be removed.' );
+		$suite->assertSame( false, $true_result['content']['behaviour']['submitAnswerButton'], 'Existing submitAnswerButton should be preserved.' );
+		$suite->assertSame( 'preserve', $true_result['content']['behaviour']['unrelated'], 'Unrelated behavior fields should be preserved.' );
+		$suite->assertSame( $true_content['metadata'], $true_result['content']['metadata'], 'Unrelated content fields should be preserved.' );
+		$suite->assertSame( 'ticksOnly', $false_result['content']['behaviour']['displayTicksMode'] );
+		$suite->assertTrue( ! array_key_exists( 'showScorePoints', $false_result['content']['behaviour'] ), 'Legacy false setting should be removed.' );
+		$suite->assertTrue( ! array_key_exists( 'submitAnswerButton', $false_result['content']['behaviour'] ), 'Absent submitAnswerButton should not be added.' );
+		$suite->assertSame( array( 'displayTicksMode' ), array_keys( $false_result['content']['behaviour'] ), 'No other PapiJo defaults should be injected.' );
 	}
 );
 
@@ -81,6 +94,7 @@ $suite->test(
 		$content = array(
 			'questions' => array(
 				array( 'library' => 'H5P.DragText 1.10', 'params' => array( 'textField' => '*answer:tip*' ) ),
+				array( 'library' => 'H5P.MarkTheWords 1.11', 'params' => array( 'textField' => 'Mark *this*.', 'behaviour' => array( 'showScorePoints' => false, 'unrelated' => 7 ) ) ),
 				array( 'library' => 'H5P.Dialogcards 1.9', 'params' => array() ),
 				array( 'library' => 'H5P.Timeline 1.1', 'params' => array() ),
 			),
@@ -90,8 +104,12 @@ $suite->test(
 
 		$suite->assertSame( 'H5P.DragTextPapiJo 1.3', $content['questions'][0]['library'] );
 		$suite->assertSame( '*answer::tip*', $content['questions'][0]['params']['textField'] );
-		$suite->assertSame( 'H5P.DialogcardsPapiJo 1.17', $content['questions'][1]['library'] );
-		$suite->assertSame( 'H5P.Timeline 1.1', $content['questions'][2]['library'] );
+		$suite->assertSame( 'H5P.MarkTheWordsPapiJo 1.2', $content['questions'][1]['library'] );
+		$suite->assertSame( 'Mark *this*.', $content['questions'][1]['params']['textField'], 'Nested unrelated params should remain unchanged.' );
+		$suite->assertSame( array( 'unrelated' => 7, 'displayTicksMode' => 'ticksOnly' ), $content['questions'][1]['params']['behaviour'] );
+		$suite->assertTrue( ! array_key_exists( 'submitAnswerButton', $content['questions'][1]['params']['behaviour'] ), 'Nested conversion should not add submitAnswerButton.' );
+		$suite->assertSame( 'H5P.DialogcardsPapiJo 1.17', $content['questions'][2]['library'] );
+		$suite->assertSame( 'H5P.Timeline 1.1', $content['questions'][3]['library'] );
 	}
 );
 
@@ -112,6 +130,46 @@ $suite->test(
 			'Feedback markers and feedback colons should be preserved exactly.'
 		);
 		$suite->assertSame( $once, $content, 'Running the migration twice must not change already migrated text.' );
+	}
+);
+
+$suite->test(
+	'MarkTheWords migration preserves explicit modes and handles missing or invalid legacy values',
+	static function () use ( $suite, $converter ): void {
+		$existing_mode = array(
+			'textField' => 'Keep content.',
+			'behaviour' => array(
+				'showScorePoints'    => true,
+				'displayTicksMode'   => array( 'custom' => 'value' ),
+				'submitAnswerButton' => 'keep-exactly',
+			),
+		);
+		$non_boolean = array(
+			'behaviour' => array( 'showScorePoints' => 1, 'unrelated' => 'preserve' ),
+		);
+		$missing = array(
+			'behaviour' => array( 'unrelated' => 'unchanged' ),
+			'outside'   => 'preserve',
+		);
+		$missing_with_mode = array(
+			'behaviour' => array( 'displayTicksMode' => 'existing-without-legacy' ),
+		);
+
+		$suite->invoke( $converter, 'convert_mark_the_words_content', array( &$existing_mode ) );
+		$once = $existing_mode;
+		$suite->invoke( $converter, 'convert_mark_the_words_content', array( &$existing_mode ) );
+		$suite->invoke( $converter, 'convert_mark_the_words_content', array( &$non_boolean ) );
+		$suite->invoke( $converter, 'convert_mark_the_words_content', array( &$missing ) );
+		$suite->invoke( $converter, 'convert_mark_the_words_content', array( &$missing_with_mode ) );
+
+		$suite->assertSame( array( 'custom' => 'value' ), $existing_mode['behaviour']['displayTicksMode'], 'Existing displayTicksMode values should be preserved exactly.' );
+		$suite->assertSame( 'keep-exactly', $existing_mode['behaviour']['submitAnswerButton'], 'Existing submitAnswerButton values should be preserved exactly.' );
+		$suite->assertTrue( ! array_key_exists( 'showScorePoints', $existing_mode['behaviour'] ), 'Legacy setting should be removed when a mode already exists.' );
+		$suite->assertSame( $once, $existing_mode, 'Repeated migration should be idempotent.' );
+		$suite->assertSame( array( 'unrelated' => 'preserve' ), $non_boolean['behaviour'], 'Non-boolean legacy values should be removed without deriving a mode.' );
+		$suite->assertSame( array( 'behaviour' => array( 'unrelated' => 'unchanged' ), 'outside' => 'preserve' ), $missing, 'Missing legacy settings should not inject fields.' );
+		$suite->assertSame( array( 'behaviour' => array( 'displayTicksMode' => 'existing-without-legacy' ) ), $missing_with_mode, 'Existing modes should remain unchanged when the legacy setting is absent.' );
+		$suite->assertTrue( ! array_key_exists( 'submitAnswerButton', $missing['behaviour'] ), 'Missing submitAnswerButton should remain absent.' );
 	}
 );
 
@@ -212,7 +270,6 @@ $suite->test(
 
 foreach (
 	array(
-		'future MarkTheWords behavior migration' => 'Target 1.2 is synchronized; content migration remains pending and content is unchanged.',
 		'future QuestionSet exact nested whitelist' => 'Target 1.23 is synchronized; nested Dialogcards is still converted.',
 		'future dependency rewrite across all sections for converted children only' => 'Pending converter synchronization; current replacement stops at the first match.',
 	) as $name => $reason
